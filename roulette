@@ -1,0 +1,73 @@
+#!/bin/bash
+
+MAX_TIME=500
+
+file_array=($@)
+count=${#file_array[@]}
+for item in ${file_array[@]}; do
+    echo -n "$item  "
+done
+echo ""
+
+rand=$(( $RANDOM % 100 ))
+rouletSec=$(( $MAX_TIME + $rand ))
+restSec=$rouletSec
+
+countDownSpeed=10
+
+lightPoint=0
+while :
+do
+    c=0
+    for item in ${file_array[@]}; do
+	if [ $c = $lightPoint ]; then
+	    for ((i=0; $i<${#item}; ++i)){
+		    echo -n "="
+		};
+		echo -n "  "
+	else
+	    for ((i=0; $i<${#item}; ++i)){
+		    echo -n "_"
+		};
+		echo -n "  "
+	fi
+	c=$(( $c + 1 ))
+    done
+    lightPoint=$(( $lightPoint + 1 ))
+    if [ $lightPoint = $count ]; then
+	lightPoint=0
+    fi
+    printf '\r'
+    restSec=$(( $restSec - $countDownSpeed ))
+    if [ $restSec -lt 0 ]; then
+	sleep 1
+	echo ""
+	if [ $lightPoint = 0 ]; then
+	    lightPoint=$(( $count -1 ))
+	else
+	    lightPoint=$(( $lightPoint -1 ))
+	fi
+	echo ""
+	echo "*********************************************"
+	echo "*** The Winner is ... ||| ${file_array[$lightPoint]} |||"
+	echo "*********************************************"
+	exit 1
+    elif [ $restSec -lt 10 ]; then
+	sleep .2
+	countDownSpeed=3
+    elif [ $restSec -lt 100 ]; then
+	sleep .12
+	countDownSpeed=5
+    elif [ $restSec -lt 200 ]; then
+	sleep .1
+	countDownSpeed=7
+    elif [ $restSec -lt 300 ]; then
+	sleep .08
+    elif [ $restSec -lt 400 ]; then
+	sleep .06
+    elif [ $restSec -lt 450 ]; then
+	sleep .04
+    else
+	sleep .01
+    fi
+done
