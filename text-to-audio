@@ -1,0 +1,104 @@
+#/bin/sh
+# テキストファイルに書いた文章を音声ファイル化するスクリプト
+# open_jtalk, ffmpeg, soxに依存している
+
+function create_silent_wav(){
+
+    # 無声の音声データを生成する
+    fs=48000 # サンプリング周波数
+    len=2    # 時間長（秒）
+
+    outputfilename=$1"_silent.wav"
+
+    temp=`mktemp ./XXXX.raw`
+    dd if=/dev/zero of=${temp} count=`expr ${fs}` bs=${len}
+    ffmpeg -loglevel quiet -y -f s16le -ar ${fs} -ac 1 -i ${temp} ${outputfilename}
+    rm ${temp}
+}
+
+function split_text_line(){
+    # テキストファイルの
+    
+    INPUT_FILE=$1
+    #OUTPUT_FILE=$2
+    OUTPUT_FILE=""
+
+    SPLITTED_TEXT_DIRECTORY="splited_texts"
+    if [ -e $INPUTFILE ]; then
+        mkdir -p $SPLITTED_TEXT_DIRECTORY
+    fi
+
+    x=0
+    while read line;do
+          if [ "$line" != '' ]; then # 改行だけの場合は無視
+              # x=$(($x+1))とする
+              x=$(($x+1))
+              ofn=${OUTPUT_FILE}${x}".dat"
+              cd ${SPLITTED_TEXT_DIRECTORY}
+              echo $line > ${ofn}
+              cd ..
+          fi
+    done < $INPUT_FILE
+}
+
+function jtalk(){
+    mkdir -p ./wav
+    open_jtalk -s 48000 -x /opt/homebrew/Cellar/open-jtalk/1.11/dic -m /opt/homebrew/Cellar/open-jtalk/1.11/voice/mei/mei_normal.htsvoice -ow ./wav/$1.wav $1
+}
+
+function jtalk_directory_converter(){
+    for file in `\find . -maxdepth 1 -type f -not -name '.DS_Store' -not -name '*.wav'`; do
+        # cat $file
+        jtalk $file
+        create_silent_wav ./wav/$file
+    done
+    cd ./wav
+    i=0
+    for file in `\find . -name '*.wav' -maxdepth 1 -type f -not -name '.DS_Store' | sort`; do
+        ((i+=1))
+        mv $file $i".wav"
+    done
+    cd ..
+    echo "convert completed"
+}
+
+
+function text_to_audio_function(){
+    # # ターゲットとなるテキストファイルを１つ引数にとってこれを実行すれば，そのテキストを音声に変換したファイルが生成される
+    mkdir /tmp/text-to-audio
+    cp $1/$2 /tmp/text-to-audio/$2
+
+    cd /tmp/text-to-audio
+    
+    split_text_line $2
+    cd splited_texts
+    jtalk_directory_converter && mv ./wav ../wav
+    cd ../wav
+
+    
+    # 結合
+    count=$((`ls | wc -w`))
+    for file in `\find . -name '*.wav' -maxdepth 1 -type f -not -name '.DS_Store' | sort`; do
+        cmd_arg=$cmd_arg" "$file
+    done
+    cmd_pref='sox '
+    cmd_suf=' ../tmp_output.wav'
+    cmd=$cmd_pref$cmd_arg$cmd_suf
+    eval $cmd
+    sox ../tmp_output.wav ../output.wav tempo 1.3
+
+    cd ..
+    rm -r ./splited_texts ./wav
+
+    mv /tmp/text-to-audio/output.wav $1/$2.wav
+    
+    rm -r /tmp/text-to-audio
+    
+}
+
+if [ -e /tmp/text-to-audio ]; then
+    rm -R /tmp/text-to-audio
+fi
+
+text_to_audio_function `pwd` $1
+

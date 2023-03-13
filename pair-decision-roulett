@@ -1,0 +1,8 @@
+#!/bin/bash
+
+rest_member_list=($@)
+
+while :
+do
+    echo $rest_member_list | xargs roulette | cat
+done

@@ -1,6 +1,22 @@
 #!/bin/bash
 
-MAX_TIME=500
+# 引数がない場合もしくは--helpの場合
+if [ $# = 0 ] || [ "$1" = "--help" ]; then
+    echo -en "\033[32mroulette - 自作ルーレットスクリプト\033[m\n\n"
+    echo -e "\033[33mDescription:\033[m"
+    echo -e "  引数として渡した要素の中からランダムに１つ選択するルーレットを回すスクリプト\n"
+    echo -e "\033[33mArguments::\033[m"
+    echo -e "  任意の個数\n"
+    echo -e "\033[33mOptions:\033[m"
+    echo -e "  \033[32m--help\033[m      この表示を出力\n"
+    echo -e "\033[33mUsage:\033[m"
+    echo -e "  \033[32mroulette\033[m p1 p2 p3 p4 p5 p6 p7"
+    exit 0
+fi
+
+echo -e "\033[32mルーレット\033[m\n"
+
+MAX_TIME=5
 
 file_array=($@)
 count=${#file_array[@]}
@@ -13,7 +29,7 @@ rand=$(( $RANDOM % 100 ))
 rouletSec=$(( $MAX_TIME + $rand ))
 restSec=$rouletSec
 
-countDownSpeed=10
+countDownSpeed=2
 
 lightPoint=0
 while :
@@ -22,12 +38,12 @@ do
     for item in ${file_array[@]}; do
 	if [ $c = $lightPoint ]; then
 	    for ((i=0; $i<${#item}; ++i)){
-		    echo -n "="
+		    echo -en "\033[32m=\033[m"
 		};
 		echo -n "  "
 	else
 	    for ((i=0; $i<${#item}; ++i)){
-		    echo -n "_"
+		    echo -en "\033[33m_\033[m"
 		};
 		echo -n "  "
 	fi
@@ -49,7 +65,7 @@ do
 	fi
 	echo ""
 	echo "*********************************************"
-	echo "*** The Winner is ... ||| ${file_array[$lightPoint]} |||"
+	echo -e "*** 当選は ...  \033[31m${file_array[$lightPoint]}\033[m  です！"
 	echo "*********************************************"
 	exit 1
     elif [ $restSec -lt 10 ]; then
@@ -71,3 +87,5 @@ do
 	sleep .01
     fi
 done
+echo ""
+exit 0
